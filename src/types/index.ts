@@ -3,6 +3,11 @@ export interface TTodo {
   content: string;
 }
 
-export interface TTodoList {
-  [key: string]: TTodo[];
+export interface TBoard {
+  title: string;
+  todos: TTodo[];
+}
+
+export interface TTodoBoard {
+  [key: string]: TBoard;
 }

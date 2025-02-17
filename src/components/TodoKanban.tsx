@@ -1,85 +1,154 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { DragDropContext, DropResult } from "@hello-pangea/dnd";
+import { useEffect, useState, useCallback } from "react";
+import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 
-import { TTodo, TTodoList } from "@/types";
-import TodoList from "@/components/TodoList";
-
-const TITLE_MAP: { [key: string]: string } = {
-  todo: "할 일",
-  inprogress: "진행 중",
-  done: "완료",
-};
+import { TTodoBoard } from "@/types";
+import { INITIAL_BOARDS, INITIAL_ORDER } from "@/constants/board";
+import { useDragAndDrop } from "@/hooks/useDragAndDrop";
+import TodoBoard from "@/components/TodoBoard";
 
 const TodoKanban = () => {
-  const [todoLists, setTodoLists] = useState<TTodoList>({});
+  const [mounted, setMounted] = useState(false);
+  const [boards, setBoards] = useState<TTodoBoard>(INITIAL_BOARDS);
+  const [boardOrder, setBoardOrder] = useState<string[]>(INITIAL_ORDER);
+  const [inputValue, setInputValue] = useState<string>("");
 
   useEffect(() => {
-    const savedTodo = localStorage.getItem("todo");
-    const savedInProgress = localStorage.getItem("inprogress");
-    const savedDone = localStorage.getItem("done");
+    try {
+      const savedOrder = localStorage.getItem("boardOrder");
+      if (savedOrder) {
+        const parsedOrder = JSON.parse(savedOrder);
+        const savedBoards: TTodoBoard = { ...boards };
 
-    const newData = {
-      todo: savedTodo ? JSON.parse(savedTodo) : [],
-      inprogress: savedInProgress ? JSON.parse(savedInProgress) : [],
-      done: savedDone ? JSON.parse(savedDone) : [],
-    };
+        parsedOrder.forEach((boardId: string) => {
+          const savedBoard = localStorage.getItem(boardId);
+          if (savedBoard) {
+            savedBoards[boardId] = JSON.parse(savedBoard);
+          }
+        });
 
-    setTodoLists(newData);
+        if (Object.keys(savedBoards).length > 0) {
+          setBoards(savedBoards);
+          setBoardOrder(parsedOrder);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load saved data:", error);
+    }
+    setMounted(true);
   }, []);
 
-  const handleDragAndDrop = (result: DropResult) => {
-    const { source, destination } = result;
-    if (!destination) return;
+  const { handleDragEnd } = useDragAndDrop({
+    boards,
+    boardOrder,
+    setBoards,
+    setBoardOrder,
+  });
 
-    const sourceList = Array.from(todoLists[source.droppableId]);
-    const destList =
-      source.droppableId === destination.droppableId
-        ? sourceList
-        : Array.from(todoLists[destination.droppableId]);
+  const handleAddBoard = useCallback(() => {
+    const trimmedValue = inputValue.trim();
+    if (!trimmedValue) {
+      alert("보드 이름을 입력해주세요.");
+      return;
+    }
 
-    const [removed] = sourceList.splice(source.index, 1);
-    destList.splice(destination.index, 0, removed);
-
-    const newTodoLists = {
-      ...todoLists,
-      [source.droppableId]: sourceList,
-      ...(source.droppableId !== destination.droppableId && {
-        [destination.droppableId]: destList,
-      }),
+    const newBoardId = `board-${Date.now()}`;
+    const newBoard = {
+      title: trimmedValue,
+      todos: [],
     };
 
-    setTodoLists(newTodoLists);
-
-    localStorage.setItem(source.droppableId, JSON.stringify(sourceList));
-    if (source.droppableId !== destination.droppableId) {
-      localStorage.setItem(destination.droppableId, JSON.stringify(destList));
-    }
-  };
-
-  const handleSetTodoList = (listId: string, newTodos: TTodo[]) => {
-    setTodoLists((prev) => ({
+    setBoards((prev) => ({
       ...prev,
-      [listId]: newTodos,
+      [newBoardId]: newBoard,
     }));
-    localStorage.setItem(listId, JSON.stringify(newTodos));
+
+    const newOrder = [...boardOrder, newBoardId];
+    setBoardOrder(newOrder);
+
+    localStorage.setItem(newBoardId, JSON.stringify(newBoard));
+    localStorage.setItem("boardOrder", JSON.stringify(newOrder));
+    setInputValue("");
+  }, [inputValue, boardOrder]);
+
+  const handleDeleteBoard = (boardId: string) => {
+    const newBoards = { ...boards };
+    delete newBoards[boardId];
+    setBoards(newBoards);
+    localStorage.removeItem(boardId);
+
+    const newOrder = boardOrder.filter((id) => id !== boardId);
+    setBoardOrder(newOrder);
+    localStorage.setItem("boardOrder", JSON.stringify(newOrder));
   };
+
+  const handleEditBoard = (boardId: string, newTitle: string) => {
+    const newBoards = { ...boards };
+    newBoards[boardId].title = newTitle;
+    setBoards(newBoards);
+    localStorage.setItem(boardId, JSON.stringify(newBoards[boardId]));
+  };
+
+  if (!mounted) return null;
 
   return (
-    <DragDropContext onDragEnd={handleDragAndDrop}>
-      <div className="flex w-full gap-4 lg:flex-row flex-col">
-        {Object.entries(todoLists).map(([listId, todos]) => (
-          <TodoList
-            key={listId}
-            listId={listId}
-            title={TITLE_MAP[listId]}
-            todos={todos}
-            setTodos={(newTodos) => {
-              handleSetTodoList(listId, newTodos);
-            }}
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <div className="flex flex-col w-full">
+        <div className="flex w-full items-center justify-end gap-2 mb-4">
+          <input
+            type="text"
+            placeholder="보드 이름"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            className="px-2 py-1 border rounded"
           />
-        ))}
+          <button
+            onClick={handleAddBoard}
+            className="px-4 py-2 bg-gray-200 rounded-md hover:opacity-80"
+          >
+            보드 추가
+          </button>
+        </div>
+        <Droppable droppableId="all-boards" type="BOARD" direction="horizontal">
+          {(provided) => (
+            <div
+              className="flex w-full gap-4 lg:flex-row flex-col"
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+            >
+              {boardOrder.map(
+                (boardId, index) =>
+                  boards[boardId] && (
+                    <TodoBoard
+                      key={boardId}
+                      listId={boardId}
+                      index={index}
+                      title={boards[boardId].title}
+                      todos={boards[boardId].todos}
+                      setTodos={(newTodos) => {
+                        const updatedBoard = {
+                          ...boards[boardId],
+                          todos: newTodos,
+                        };
+                        setBoards((prev) => ({
+                          ...prev,
+                          [boardId]: updatedBoard,
+                        }));
+                        localStorage.setItem(
+                          boardId,
+                          JSON.stringify(updatedBoard)
+                        );
+                      }}
+                      handleDeleteBoard={handleDeleteBoard}
+                      handleEditBoard={handleEditBoard}
+                    />
+                  )
+              )}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
       </div>
     </DragDropContext>
   );
