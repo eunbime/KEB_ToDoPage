@@ -3,28 +3,30 @@
 import { useState } from "react";
 import { BiEdit, BiSave, BiTrash } from "react-icons/bi";
 
+import { TTodo } from "@/types";
+
 interface TodoItemProps {
-  title: string;
-  todo: string;
-  setTodos: React.Dispatch<React.SetStateAction<string[]>>;
-  todos: string[];
+  todo: TTodo;
+  setTodos: (todos: TTodo[]) => void;
+  todos: TTodo[];
   index: number;
 }
 
-const TodoItem = ({ title, todo, setTodos, todos, index }: TodoItemProps) => {
+const TodoItem = ({ todo, setTodos, todos, index }: TodoItemProps) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [value, setValue] = useState<string>("");
 
   const handleEdit = () => {
-    setValue(todo);
+    setValue(todo.content);
     setIsEditing(true);
   };
 
   const handleSave = () => {
     if (!value.trim()) return;
-    const newTodos = todos.map((t, i) => (i === index ? value : t));
+    const newTodos = todos.map((t, i) =>
+      i === index ? { ...t, content: value } : t
+    );
     setTodos(newTodos);
-    localStorage.setItem(title, JSON.stringify(newTodos));
     setValue("");
     setIsEditing(false);
   };
@@ -32,11 +34,10 @@ const TodoItem = ({ title, todo, setTodos, todos, index }: TodoItemProps) => {
   const handleDelete = () => {
     const newTodos = todos.filter((t, i) => i !== index);
     setTodos(newTodos);
-    localStorage.setItem(title, JSON.stringify(newTodos));
   };
 
   return (
-    <div className="flex justify-between items-start gap-3 px-3 py-2 shadow-md shadow-gray-300 rounded-md">
+    <div className="flex justify-between items-start gap-3 px-3 py-2 shadow-sm shadow-gray-300 border border-gray-300 rounded-md">
       {isEditing ? (
         <input
           type="text"
@@ -48,7 +49,7 @@ const TodoItem = ({ title, todo, setTodos, todos, index }: TodoItemProps) => {
           maxLength={50}
         />
       ) : (
-        <p className="break-all max-w-[250px]">{todo}</p>
+        <p className="break-all max-w-[250px]">{todo.content}</p>
       )}
       <div className="flex gap-2">
         {isEditing ? (

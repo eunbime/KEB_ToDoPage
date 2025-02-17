@@ -1,51 +1,46 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BiPlus } from "react-icons/bi";
-import TodoItem from "./TodoItem";
+import { Droppable, Draggable } from "@hello-pangea/dnd";
+import { v4 as uuidv4 } from "uuid";
+
+import { TTodo } from "@/types";
+import TodoItem from "@/components/TodoItem";
 
 interface TodoListProps {
+  listId: string;
   title: string;
+  todos: TTodo[];
+  setTodos: (todos: TTodo[]) => void;
 }
 
-const TodoList = ({ title }: TodoListProps) => {
-  const [todos, setTodos] = useState<string[]>([]);
+const TodoList = ({ listId, title, todos, setTodos }: TodoListProps) => {
   const [isAdding, setIsAdding] = useState<boolean>(false);
   const [value, setValue] = useState<string>("");
 
-  useEffect(() => {
-    const savedTodos = JSON.parse(localStorage.getItem(title) || "[]");
-    if (savedTodos.length > 0) {
-      setTodos(savedTodos);
-    }
-  }, [title]);
-
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setTodos((prev) => [value, ...prev]);
-    localStorage.setItem(title, JSON.stringify([value, ...todos]));
+    if (!value.trim()) {
+      window.alert("내용을 입력해주세요.");
+      return;
+    }
+
+    const newTodo = { id: uuidv4(), content: value };
+    setTodos([newTodo, ...todos]);
     setValue("");
     setIsAdding(false);
   };
 
   return (
-    <div className="flex flex-col gap-4 w-1/3 min-h-[90vh] shadow-md shadow-gray-300 border-2 border-gray-300 rounded-md p-4">
+    <div className="flex flex-col gap-4 w-full min-h-[90vh] shadow-md shadow-gray-300 border-2 border-gray-300 rounded-md p-4">
       <section className="flex justify-between items-center border-b-2 border-gray-300 pb-2">
-        <h2 className="text-2xl font-bold ">
-          {title === "todo"
-            ? "todo"
-            : title === "inProgress"
-            ? "inProgress"
-            : "done"}
-        </h2>
-        <button className="px-2 py-1 rounded-md">
-          <BiPlus
-            size={20}
-            onClick={() => setIsAdding((prev) => !prev)}
-            className="cursor-pointer"
-          />
+        <h2 className="text-2xl font-bold capitalize">{title}</h2>
+        <button onClick={() => setIsAdding((prev) => !prev)}>
+          <BiPlus size={20} />
         </button>
       </section>
+
       {isAdding && (
         <form className="flex gap-2" onSubmit={handleSubmit}>
           <input
@@ -54,23 +49,42 @@ const TodoList = ({ title }: TodoListProps) => {
             onChange={(e) => setValue(e.target.value)}
             className="w-full border-b-2 border-gray-300"
             maxLength={50}
+            autoFocus
           />
           <button type="submit">
             <BiPlus />
           </button>
         </form>
       )}
-
-      {todos.map((item, index) => (
-        <TodoItem
-          key={index}
-          index={index}
-          title={title}
-          todo={item}
-          setTodos={setTodos}
-          todos={todos}
-        />
-      ))}
+      <Droppable droppableId={listId}>
+        {(provided) => (
+          <section
+            className="flex flex-col gap-2 h-full"
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+          >
+            {todos.map((todo, index) => (
+              <Draggable key={todo.id} draggableId={todo.id} index={index}>
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                  >
+                    <TodoItem
+                      todo={todo}
+                      index={index}
+                      todos={todos}
+                      setTodos={setTodos}
+                    />
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
+          </section>
+        )}
+      </Droppable>
     </div>
   );
 };
