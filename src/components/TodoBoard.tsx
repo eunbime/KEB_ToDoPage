@@ -57,7 +57,7 @@ const TodoBoard = ({
         <div
           ref={draggableProvided.innerRef}
           {...draggableProvided.draggableProps}
-          className="flex flex-col gap-4 w-full max-w-[400px] min-w-[300px] min-h-[80vh] shadow-md shadow-gray-300 border-2 border-gray-300 rounded-md p-4"
+          className="flex flex-col gap-4 max-w-[400px] min-w-[350px] min-h-[80vh] bg-white shadow-md shadow-gray-300 border-2 border-gray-300 rounded-md p-4"
         >
           <section
             className="flex justify-between items-center border-b-2 border-gray-300 pb-2"
@@ -143,16 +143,21 @@ const TodoBoard = ({
                 />
               </button>
             ) : (
-              <button onClick={() => setIsEditing((prev) => !prev)}>
-                <BiEdit
-                  size={20}
-                  className="text-green-500 hover:text-green-600"
-                />
-              </button>
+              <>
+                <button onClick={() => setIsEditing((prev) => !prev)}>
+                  <BiEdit
+                    size={20}
+                    className="text-green-500 hover:text-green-600"
+                  />
+                </button>
+                <button onClick={() => handleDeleteBoard(listId)}>
+                  <BiTrash
+                    size={20}
+                    className="text-red-500 hover:text-red-600"
+                  />
+                </button>
+              </>
             )}
-            <button onClick={() => handleDeleteBoard(listId)}>
-              <BiTrash size={20} className="text-red-500 hover:text-red-600" />
-            </button>
           </div>
         </div>
       )}

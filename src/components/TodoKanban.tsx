@@ -96,7 +96,7 @@ const TodoKanban = () => {
         <Droppable droppableId="all-boards" type="BOARD" direction="horizontal">
           {(provided) => (
             <div
-              className="flex w-full gap-4 lg:flex-row flex-col"
+              className="flex w-full gap-4 md:flex-row flex-col"
               ref={provided.innerRef}
               {...provided.droppableProps}
             >
