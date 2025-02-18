@@ -1,43 +1,24 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 
 import { TTodoBoard } from "@/types";
 import { INITIAL_BOARDS, INITIAL_ORDER } from "@/constants/board";
 import { useDragAndDrop } from "@/hooks/useDragAndDrop";
 import TodoBoard from "@/components/TodoBoard";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const TodoKanban = () => {
-  const [mounted, setMounted] = useState(false);
   const [boards, setBoards] = useState<TTodoBoard>(INITIAL_BOARDS);
   const [boardOrder, setBoardOrder] = useState<string[]>(INITIAL_ORDER);
   const [inputValue, setInputValue] = useState<string>("");
 
-  useEffect(() => {
-    try {
-      const savedOrder = localStorage.getItem("boardOrder");
-      if (savedOrder) {
-        const parsedOrder = JSON.parse(savedOrder);
-        const savedBoards: TTodoBoard = { ...boards };
-
-        parsedOrder.forEach((boardId: string) => {
-          const savedBoard = localStorage.getItem(boardId);
-          if (savedBoard) {
-            savedBoards[boardId] = JSON.parse(savedBoard);
-          }
-        });
-
-        if (Object.keys(savedBoards).length > 0) {
-          setBoards(savedBoards);
-          setBoardOrder(parsedOrder);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load saved data:", error);
-    }
-    setMounted(true);
-  }, []);
+  const { mounted, saveBoard, deleteBoard, saveBoardOrder } = useLocalStorage({
+    boards,
+    setBoards,
+    setBoardOrder,
+  });
 
   const { handleDragEnd } = useDragAndDrop({
     boards,
@@ -67,10 +48,10 @@ const TodoKanban = () => {
     const newOrder = [...boardOrder, newBoardId];
     setBoardOrder(newOrder);
 
-    localStorage.setItem(newBoardId, JSON.stringify(newBoard));
-    localStorage.setItem("boardOrder", JSON.stringify(newOrder));
+    saveBoard(newBoardId, newBoard);
+    saveBoardOrder(newOrder);
     setInputValue("");
-  }, [inputValue, boardOrder]);
+  }, [inputValue, boardOrder, saveBoard, saveBoardOrder]);
 
   const handleDeleteBoard = (boardId: string) => {
     const newBoards = { ...boards };
@@ -80,6 +61,9 @@ const TodoKanban = () => {
 
     const newOrder = boardOrder.filter((id) => id !== boardId);
     setBoardOrder(newOrder);
+
+    deleteBoard(boardId);
+    saveBoardOrder(newOrder);
     localStorage.setItem("boardOrder", JSON.stringify(newOrder));
   };
 
@@ -87,7 +71,8 @@ const TodoKanban = () => {
     const newBoards = { ...boards };
     newBoards[boardId].title = newTitle;
     setBoards(newBoards);
-    localStorage.setItem(boardId, JSON.stringify(newBoards[boardId]));
+    saveBoard(boardId, newBoards[boardId]);
+    // localStorage.setItem(boardId, JSON.stringify(newBoards[boardId]));
   };
 
   if (!mounted) return null;

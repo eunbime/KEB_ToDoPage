@@ -13,10 +13,10 @@ interface TodoItemProps {
 
 const TodoItem = ({ todo, setTodos, todos }: TodoItemProps) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [value, setValue] = useState<string>(todo.content);
+  const [value, setValue] = useState<string>(todo?.content || "");
 
   const handleEdit = () => {
-    setValue(todo.content);
+    setValue(todo?.content || "");
     setIsEditing(true);
   };
 
@@ -35,7 +35,8 @@ const TodoItem = ({ todo, setTodos, todos }: TodoItemProps) => {
   };
 
   const handleDelete = () => {
-    const newTodos = todos.filter((t) => t.id !== todo.id);
+    if (!todo?.id) return;
+    const newTodos = todos.filter((t) => t?.id !== todo?.id);
     setTodos(newTodos);
   };
 
@@ -44,7 +45,7 @@ const TodoItem = ({ todo, setTodos, todos }: TodoItemProps) => {
       handleSave();
     } else if (e.key === "Escape") {
       setIsEditing(false);
-      setValue(todo.content);
+      setValue(todo?.content || "");
     }
   };
 
@@ -62,7 +63,7 @@ const TodoItem = ({ todo, setTodos, todos }: TodoItemProps) => {
           maxLength={50}
         />
       ) : (
-        <p className="break-all max-w-[250px] py-1">{todo.content}</p>
+        <p className="break-all max-w-[250px] py-1">{todo?.content || ""}</p>
       )}
       <div className="flex gap-2 items-center">
         {isEditing ? (

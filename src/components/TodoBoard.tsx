@@ -105,12 +105,13 @@ const TodoBoard = ({
                 {Array.isArray(todos) &&
                   todos.map((todo, index) => (
                     <Draggable
-                      key={todo.id}
-                      draggableId={todo.id}
+                      key={todo?.id || `todo-${index}`}
+                      draggableId={todo?.id || `todo-${index}`}
                       index={index}
                     >
                       {(provided) => (
                         <div
+                          key={todo?.id || `todo-${index}`}
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
