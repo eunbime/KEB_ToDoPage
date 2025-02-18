@@ -6,8 +6,8 @@ import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { TTodoBoard } from "@/types";
 import { INITIAL_BOARDS, INITIAL_ORDER } from "@/constants/board";
 import { useDragAndDrop } from "@/hooks/useDragAndDrop";
-import TodoBoard from "@/components/TodoBoard";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import TodoBoard from "@/components/TodoBoard";
 
 const TodoKanban = () => {
   const [boards, setBoards] = useState<TTodoBoard>(INITIAL_BOARDS);
@@ -64,7 +64,6 @@ const TodoKanban = () => {
 
     deleteBoard(boardId);
     saveBoardOrder(newOrder);
-    localStorage.setItem("boardOrder", JSON.stringify(newOrder));
   };
 
   const handleEditBoard = (boardId: string, newTitle: string) => {
@@ -72,7 +71,6 @@ const TodoKanban = () => {
     newBoards[boardId].title = newTitle;
     setBoards(newBoards);
     saveBoard(boardId, newBoards[boardId]);
-    // localStorage.setItem(boardId, JSON.stringify(newBoards[boardId]));
   };
 
   if (!mounted) return null;

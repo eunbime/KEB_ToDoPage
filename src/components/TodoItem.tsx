@@ -7,8 +7,8 @@ import { TTodo } from "@/types";
 
 interface TodoItemProps {
   todo: TTodo;
-  setTodos: (todos: TTodo[]) => void;
   todos: TTodo[];
+  setTodos: (todos: TTodo[]) => void;
 }
 
 const TodoItem = ({ todo, setTodos, todos }: TodoItemProps) => {

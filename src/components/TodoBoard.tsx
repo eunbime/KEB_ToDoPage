@@ -6,7 +6,7 @@ import { Droppable, Draggable } from "@hello-pangea/dnd";
 import { v4 as uuidv4 } from "uuid";
 
 import { TTodo } from "@/types";
-import TodoItem from "./TodoItem";
+import TodoItem from "@/components/TodoItem";
 
 interface TodoBoardProps {
   listId: string;

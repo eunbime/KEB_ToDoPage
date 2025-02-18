@@ -1,6 +1,8 @@
-import { TTodoBoard } from "@/types";
-import { DropResult } from "@hello-pangea/dnd";
 import { useCallback } from "react";
+import { DropResult } from "@hello-pangea/dnd";
+
+import { TTodoBoard } from "@/types";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 interface UseDragAndDropProps {
   boards: TTodoBoard;
@@ -15,6 +17,12 @@ export const useDragAndDrop = ({
   setBoards,
   setBoardOrder,
 }: UseDragAndDropProps) => {
+  const { saveBoard, saveBoardOrder } = useLocalStorage({
+    boards,
+    setBoards,
+    setBoardOrder,
+  });
+
   const handleDragEnd = useCallback(
     (result: DropResult) => {
       const { source, destination, type } = result;
@@ -26,7 +34,7 @@ export const useDragAndDrop = ({
         const [removed] = newOrder.splice(source.index, 1);
         newOrder.splice(destination.index, 0, removed);
         setBoardOrder(newOrder);
-        localStorage.setItem("boardOrder", JSON.stringify(newOrder));
+        saveBoardOrder(newOrder);
         return;
       }
 
@@ -58,10 +66,7 @@ export const useDragAndDrop = ({
         };
 
         setBoards(newBoards);
-        localStorage.setItem(
-          source.droppableId,
-          JSON.stringify(newBoards[source.droppableId])
-        );
+        saveBoard(source.droppableId, newBoards[source.droppableId]);
         return;
       }
 
@@ -83,16 +88,10 @@ export const useDragAndDrop = ({
       };
 
       setBoards(newBoards);
-      localStorage.setItem(
-        source.droppableId,
-        JSON.stringify(newBoards[source.droppableId])
-      );
-      localStorage.setItem(
-        destination.droppableId,
-        JSON.stringify(newBoards[destination.droppableId])
-      );
+      saveBoard(source.droppableId, newBoards[source.droppableId]);
+      saveBoard(destination.droppableId, newBoards[destination.droppableId]);
     },
-    [boards, boardOrder]
+    [boards, boardOrder, setBoards, setBoardOrder, saveBoard, saveBoardOrder]
   );
 
   return { handleDragEnd };
